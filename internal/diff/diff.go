@@ -1,54 +1,61 @@
-// Package diff provides functionality for comparing two parsed .env maps
-// and reporting missing or mismatched keys between them.
+// Package diff compares two maps of environment variables and returns
+// a list of differences including missing and mismatched keys.
 package diff
 
-// Result holds the outcome of comparing two environment files.
+// Status represents the type of difference found for a key.
+type Status string
+
+const (
+	// StatusMissingInB indicates the key exists in A but not in B.
+	StatusMissingInB Status = "missing_in_b"
+	// StatusMissingInA indicates the key exists in B but not in A.
+	StatusMissingInA Status = "missing_in_a"
+	// StatusMismatched indicates the key exists in both but values differ.
+	StatusMismatched Status = "mismatched"
+)
+
+// Result holds the comparison result for a single key.
 type Result struct {
-	// MissingInB contains keys present in A but absent in B.
-	MissingInB []string
-	// MissingInA contains keys present in B but absent in A.
-	MissingInA []string
-	// Mismatched contains keys present in both files but with different values.
-	Mismatched []MismatchedKey
+	Key     string
+	Status  Status
+	ValueA  string
+	ValueB  string
 }
 
-// MismatchedKey represents a key whose value differs between two env files.
-type MismatchedKey struct {
-	Key    string
-	ValueA string
-	ValueB string
-}
-
-// Compare takes two maps (parsed .env files) and returns a Result describing
-// the differences between them. The maps are keyed by variable name.
-func Compare(a, b map[string]string) Result {
-	var result Result
+// Compare compares two env maps and returns a slice of Result
+// describing all differences between them.
+func Compare(a, b map[string]string) []Result {
+	var results []Result
 
 	for key, valA := range a {
-		valB, exists := b[key]
-		if !exists {
-			result.MissingInB = append(result.MissingInB, key)
+		valB, ok := b[key]
+		if !ok {
+			results = append(results, Result{
+				Key:    key,
+				Status: StatusMissingInB,
+				ValueA: valA,
+			})
 			continue
 		}
 		if valA != valB {
-			result.Mismatched = append(result.Mismatched, MismatchedKey{
+			results = append(results, Result{
 				Key:    key,
+				Status: StatusMismatched,
 				ValueA: valA,
 				ValueB: valB,
 			})
 		}
 	}
 
-	for key := range b {
-		if _, exists := a[key]; !exists {
-			result.MissingInA = append(result.MissingInA, key)
+	for key, valB := range b {
+		if _, ok := a[key]; !ok {
+			results = append(results, Result{
+				Key:    key,
+				Status: StatusMissingInA,
+				ValueB: valB,
+			})
 		}
 	}
 
-	return result
-}
-
-// HasDifferences returns true if the Result contains any differences.
-func (r Result) HasDifferences() bool {
-	return len(r.MissingInA) > 0 || len(r.MissingInB) > 0 || len(r.Mismatched) > 0
+	return results
 }
