@@ -52,6 +52,17 @@ envdiff .env.example .env.production .env.staging
 | `--strict` | Exit with non-zero code if any diff is found |
 | `--json` | Output results as JSON |
 | `--quiet` | Suppress output, use exit code only |
+| `--ignore KEY` | Ignore a specific key (repeatable) |
+
+---
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | No differences found |
+| `1` | Differences found (when using `--strict`) |
+| `2` | Error (e.g. file not found, parse error) |
 
 ---
 
