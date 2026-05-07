@@ -56,3 +56,13 @@ func TestRun_WithStatusFlag(t *testing.T) {
 	// from parsing/diffing itself — the exit path is not reachable in test.
 	_ = run()
 }
+
+func TestRun_EmptyFiles(t *testing.T) {
+	a := writeTempEnv(t, "")
+	b := writeTempEnv(t, "")
+
+	os.Args = []string{"envdiff", a, b}
+	if err := run(); err != nil {
+		t.Fatalf("unexpected error for empty files: %v", err)
+	}
+}
